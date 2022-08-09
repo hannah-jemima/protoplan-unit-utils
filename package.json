@@ -1,0 +1,37 @@
+{
+  "name": "protoplan-unit-utilities",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/node-dijkstra": "^2.5.2",
+    "node-dijkstra": "^2.5.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "2.3.2"
+  },
+  "eslintConfig": {
+    "rules": {
+      "no-console": [
+        "error",
+        {
+          "allow": [
+            "warn",
+            "error",
+            "log"
+          ]
+        }
+      ],
+      "no-explicit-any": "off"
+    }
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hannah-jemima/protoplan-unit-utilities.git"
+  },
+  "license": "MIT"
+}
