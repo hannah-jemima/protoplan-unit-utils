@@ -1,7 +1,7 @@
 import {
   validDoseUnitOptionsForProtocolRow,
   getUnitConversionFactor,
-  TUnitConversionPath } from "./utils";
+  TUnitConversionPath } from "./utils.js";
 
 export { validDoseUnitOptionsForProtocolRow,
   getUnitConversionFactor,
