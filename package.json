@@ -1,6 +1,6 @@
 {
-  "name": "protoplan-unit-utilities",
-  "version": "1.0.2",
+  "name": "@protoplan/unit-utils",
+  "version": "1.0.3",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -36,7 +36,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hannah-jemima/protoplan-unit-utilities.git"
+    "url": "git+https://github.com/hannah-jemima/unit-utils.git"
   },
   "license": "MIT",
   "devDependencies": {
