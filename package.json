@@ -5,8 +5,10 @@
   "main": "./lib/index.js",
   "module": "./lib/index.js",
   "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "build": "npm i & tsc",
+    "commit": "git add . & git commit -m 'pub'",
+    "prepublishOnly": "npm run build & npm run commit",
+    "publish": "npm publish --access public"
   },
   "files": [
     "lib/"
