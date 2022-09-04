@@ -1,6 +1,6 @@
 {
   "name": "@protoplan/unit-utils",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -8,7 +8,7 @@
     "build": "npm i & tsc",
     "commit": "git add . & git commit -m 'pub'",
     "prepublishOnly": "npm run build & npm run commit",
-    "publish": "npm publish --access public"
+    "pub": "npm publish --access public"
   },
   "files": [
     "lib/"
