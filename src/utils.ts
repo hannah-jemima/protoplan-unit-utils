@@ -1,6 +1,6 @@
 import Graph from 'node-dijkstra';
-import { TOption } from './types';
 import { TUnit, TUnitConversions, TUnits } from "@protoplan/types";
+import { TOption } from '.';
 
 
 const storedUnitConversionPaths: TUnitConversionPath[] = [];
