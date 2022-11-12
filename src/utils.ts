@@ -12,7 +12,7 @@ export function validDoseUnitOptionsForProtocolRow(
   protocolRow: {
     productId: number,
     formId: number,
-    recDoseUnitId: number,
+    recDoseUnitId: number | null,
     amountUnitId: number }): { unitOptions: TOption[], newFormId: undefined | number }
 {
   const productId = protocolRow.productId;
