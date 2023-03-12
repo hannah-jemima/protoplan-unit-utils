@@ -1,6 +1,6 @@
 {
   "name": "@protoplan/unit-utils",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -14,7 +14,7 @@
     "lib/"
   ],
   "dependencies": {
-    "@protoplan/types": "^18.0.1",
+    "@protoplan/types": "^18.0.0",
     "@types/node-dijkstra": "^2.5.2",
     "node-dijkstra": "^2.5.0"
   },
