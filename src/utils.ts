@@ -29,7 +29,7 @@ export function validDoseUnitOptionsForProtocolRow(
       ucPath => ucPath.fromUnitId === fromUnitId && ucPath.toUnitId === toUnitId);
 
     if(!storedPaths.length)
-      tryFindPath(fromUnitId, toUnitId, productId, units, unitConversions);
+      tryFindPath(fromUnitId, toUnitId, [productId], units, unitConversions);
 
     const storedPath = storedUnitConversionPaths.filter(
       ucPath => ucPath.fromUnitId === fromUnitId && ucPath.toUnitId === toUnitId)[0];
@@ -165,7 +165,7 @@ function buildGraph(units: TUnits, unitConversions: TUnitConversions, productId?
 function tryFindPath(
   fromUnitId: number,
   toUnitId: number,
-  productId: number,
+  productIds: number[],
   units: TUnits,
   unitConversions: TUnitConversions): number[] | null
 {
@@ -176,7 +176,7 @@ function tryFindPath(
   {
     try
     {
-      const productGraph = buildGraph(units, unitConversions, productId);
+      const productGraph = buildGraph(units, unitConversions, productIds.length === 1 ? productIds[0] : undefined);
       path = (productGraph.path(fromUnitId.toString(), toUnitId.toString()) as string[]).map(id => Number(id));
       path = path?.map(unitId => typeof unitId === "string" ? parseFloat(unitId) : unitId) || null;
     }
@@ -196,7 +196,7 @@ function tryFindPath(
 export function getUnitConversionFactor(
   fromUnitId: number,
   toUnitId: number,
-  productId: number,
+  productIds: number[],
   units: TUnits,
   unitConversions: TUnitConversions)
 {
@@ -204,7 +204,7 @@ export function getUnitConversionFactor(
   if (toUnitId === fromUnitId)
     return 1;
 
-  const path = tryFindPath(fromUnitId, toUnitId, productId, units, unitConversions);
+  const path = tryFindPath(fromUnitId, toUnitId, productIds, units, unitConversions);
 
   let factor = 0;
 
@@ -214,7 +214,10 @@ export function getUnitConversionFactor(
 
     for(let i = 0; i < path.length - 1; ++i)
     {
-      factor *= findConversionFactor(path[i], path[i + 1], unitConversions, productId);
+      factor *= findConversionFactor(
+        path[i],
+        path[i + 1],
+        unitConversions, productIds.length ? productIds[0] : null);
     }
   }
 
