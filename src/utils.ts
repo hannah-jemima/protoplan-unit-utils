@@ -109,14 +109,16 @@ const findConversionFactor = (
   fromUnitId: number,
   toUnitId: number,
   unitConversions: TUnitConversions,
-  productId: number | null = null) =>
+  productIds?: (number | null)[]) =>
 {
   let factor = 0;
 
-  const searchUnitConversions = (productId: number | null = null) =>
+  const searchUnitConversions = (productIds?: (number | null)[]) =>
   {
     unitConversions
-      .filter(uc => uc.productId === productId)
+      .filter(uc => productIds ?
+        !productIds.every(productId => uc.productId !== productId) :
+        uc.productId === null)
       .every(uc =>
       {
         factor = (factor || 1) * factorIfConversionMatches(uc, fromUnitId, toUnitId);
@@ -126,7 +128,8 @@ const findConversionFactor = (
       });
   };
 
-  searchUnitConversions(productId);
+  if(productIds?.length)
+    searchUnitConversions(productIds);
 
   if(!factor)
     searchUnitConversions();
@@ -135,7 +138,7 @@ const findConversionFactor = (
 };
 
 
-function buildGraph(units: TUnits, unitConversions: TUnitConversions, productId?: number)
+function buildGraph(units: TUnits, unitConversions: TUnitConversions, productIds?: (number | null)[])
 {
   const route = new Graph();
 
@@ -149,7 +152,7 @@ function buildGraph(units: TUnits, unitConversions: TUnitConversions, productId?
       const toUnitId = toUnit.unitId;
 
       // Prefer product-specific unit unit conversions
-      if(findConversionFactor(fromUnitId, toUnitId, unitConversions, productId))
+      if(findConversionFactor(fromUnitId, toUnitId, unitConversions, productIds))
         nodePaths[toUnitId] = 1;
       else if(findConversionFactor(fromUnitId, toUnitId, unitConversions))
         nodePaths[toUnitId] = 2;
@@ -165,7 +168,7 @@ function buildGraph(units: TUnits, unitConversions: TUnitConversions, productId?
 function tryFindPath(
   fromUnitId: number,
   toUnitId: number,
-  productIds: number[],
+  productIds: (number | null)[],
   units: TUnits,
   unitConversions: TUnitConversions): number[] | null
 {
@@ -176,7 +179,7 @@ function tryFindPath(
   {
     try
     {
-      const productGraph = buildGraph(units, unitConversions, productIds.length === 1 ? productIds[0] : undefined);
+      const productGraph = buildGraph(units, unitConversions, productIds);
       path = (productGraph.path(fromUnitId.toString(), toUnitId.toString()) as string[]).map(id => Number(id));
       path = path?.map(unitId => typeof unitId === "string" ? parseFloat(unitId) : unitId) || null;
     }
@@ -217,7 +220,8 @@ export function getUnitConversionFactor(
       factor *= findConversionFactor(
         path[i],
         path[i + 1],
-        unitConversions, productIds.length ? productIds[0] : null);
+        unitConversions,
+        productIds);
     }
   }
 
