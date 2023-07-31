@@ -6,18 +6,18 @@ import { TOption } from '.';
 const storedUnitConversionPaths: TUnitConversionPath[] = [];
 
 
-export function validDoseUnitOptionsForProtocolRow(
+export function validDoseUnitOptionsForDosing(
   units: TUnits,
   unitConversions: TUnitConversions,
-  protocolRow: {
+  dosing: {
     productId: number,
     formId: number,
-    recDoseUnitId: number | null,
+    recDoseUnitId?: number | null,
     amountUnitId: number }): { unitOptions: TOption[], newFormId: undefined | number }
 {
-  const productId = protocolRow.productId;
-  const recDoseUnitId = protocolRow.recDoseUnitId;
-  const amountUnitId = protocolRow.amountUnitId;
+  const productId = dosing.productId;
+  const recDoseUnitId = dosing.recDoseUnitId;
+  const amountUnitId = dosing.amountUnitId;
   const baseUnitId = recDoseUnitId || amountUnitId;
 
   const getUnit = (unitId: number) => units.filter(unit => unit.unitId === unitId)[0];
@@ -48,6 +48,7 @@ export function validDoseUnitOptionsForProtocolRow(
         !validUnits.filter(unitOption => unitOption.value === unitId).length &&     // if not already added
         (unitId === baseUnitId || checkForUnitConversionPath(unitId, baseUnitId)))  // if uc path available
       {
+        console.log("unitId", unitId);
         validUnits.push(unitOptionFromId(unitId));
       }
     });
@@ -59,18 +60,18 @@ export function validDoseUnitOptionsForProtocolRow(
 
   // Determine form
   let newFormId: number | undefined = undefined;
-  if(!protocolRow.formId)
+  if(!dosing.formId)
   {
-    protocolRow.formId = units.filter(unit => unit.unitId === baseUnitId)[0]?.formId;
+    dosing.formId = units.filter(unit => unit.unitId === baseUnitId)[0]?.formId;
 
-    if(protocolRow.formId)
+    if(dosing.formId)
     {
-      newFormId = protocolRow.formId;
+      newFormId = dosing.formId;
     }
   }
 
   // Add relevant units for form
-  switch(protocolRow.formId)
+  switch(dosing.formId)
   {
   case 1: // capsules
     addToValidUnits([3, 5, 6]);
@@ -128,9 +129,11 @@ const findConversionFactor = (
       });
   };
 
+  // Prefer product-specific unit conversion
   if(productIds?.length)
     searchUnitConversions(productIds);
 
+  // Fall back to a default unit conversion
   if(!factor)
     searchUnitConversions();
 

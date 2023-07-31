@@ -1,5 +1,5 @@
 import {
-  validDoseUnitOptionsForProtocolRow,
+  validDoseUnitOptionsForDosing,
   getUnitConversionFactor,
   TUnitConversionPath } from "./utils.js";
 
@@ -12,6 +12,6 @@ export declare interface TOption
   input?: string;
 }
 
-export { validDoseUnitOptionsForProtocolRow,
+export { validDoseUnitOptionsForDosing as validDoseUnitOptionsForProtocolRow,
   getUnitConversionFactor,
   TUnitConversionPath }
