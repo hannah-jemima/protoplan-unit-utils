@@ -48,7 +48,6 @@ export function validDoseUnitOptionsForDosing(
         !validUnits.filter(unitOption => unitOption.value === unitId).length &&     // if not already added
         (unitId === baseUnitId || checkForUnitConversionPath(unitId, baseUnitId)))  // if uc path available
       {
-        console.log("unitId", unitId);
         validUnits.push(unitOptionFromId(unitId));
       }
     });
