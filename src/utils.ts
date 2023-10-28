@@ -31,10 +31,10 @@ export function validDoseUnitOptionsForDosing(
     if(!storedPaths.length)
       tryFindPath(fromUnitId, toUnitId, [productId], units, unitConversions);
 
-    const storedPath = storedUnitConversionPaths.filter(
-      ucPath => ucPath.fromUnitId === fromUnitId && ucPath.toUnitId === toUnitId)[0];
+    const storedPath = storedUnitConversionPaths.find(
+      ucPath => ucPath.fromUnitId === fromUnitId && ucPath.toUnitId === toUnitId);
 
-    return storedPath.path !== null;
+    return Boolean(storedPath);
   };
 
   let validUnits: TOption[] = [];
@@ -177,22 +177,22 @@ function tryFindPath(
   let path: number[] | null = storedUnitConversionPaths
     .filter(ucPath => ucPath.fromUnitId === fromUnitId && ucPath.toUnitId === toUnitId)[0]?.path || null;
 
-  if(path === null)
-  {
-    try
-    {
-      const productGraph = buildGraph(units, unitConversions, productIds);
-      path = (productGraph.path(fromUnitId.toString(), toUnitId.toString()) as string[]).map(id => Number(id));
-      path = path?.map(unitId => typeof unitId === "string" ? parseFloat(unitId) : unitId) || null;
-    }
-    catch
-    {
-      path = null;
-    }
+  if(path)
+    return path;
 
-    // Store new path
-    storedUnitConversionPaths.push({ fromUnitId: fromUnitId, toUnitId: toUnitId, path: path });
+  try
+  {
+    const productGraph = buildGraph(units, unitConversions, productIds);
+    path = (productGraph.path(fromUnitId.toString(), toUnitId.toString()) as string[]).map(id => Number(id));
+    path = path?.map(unitId => typeof unitId === "string" ? parseFloat(unitId) : unitId) || null;
   }
+  catch
+  {
+    return null;
+  }
+
+  // Store new path
+  storedUnitConversionPaths.push({ fromUnitId, toUnitId, path });
 
   return path;
 }
