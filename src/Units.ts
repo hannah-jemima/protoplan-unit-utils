@@ -269,6 +269,8 @@ export default class Units
     if(!factor)
       factor = searchUnitConversions();
 
+    console.log("getDirectFactor", fromUnitId, toUnitId, factor);
+
     return factor;
   };
 
