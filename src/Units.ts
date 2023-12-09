@@ -126,7 +126,7 @@ export default class Units
     return ({ label: unit.name, value: unit.unitId });
   }
 
-  public getOptionsForProduct<T>(product: T & {
+  public getUnitOptionsForProduct<T>(product: T & {
     productId: number,
     formId: number,
     recDoseUnitId?: number | null,
@@ -164,7 +164,7 @@ export default class Units
         validUnitOptions.push(option);
     });
 
-    return { unitOptions: validUnitOptions.sort((a, b) => a.label.localeCompare(b.label)) };
+    return validUnitOptions.sort((a, b) => a.label.localeCompare(b.label));
   }
 
   private rebuildGraphs()

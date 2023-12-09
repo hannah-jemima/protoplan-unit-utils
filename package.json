@@ -1,6 +1,6 @@
 {
   "name": "@protoplan/unit-utils",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -17,6 +17,9 @@
     "@protoplan/types": "45.0.0",
     "@types/node-dijkstra": "^2.5.2",
     "node-dijkstra": "^2.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.4"
   },
   "optionalDependencies": {
     "fsevents": "2.3.2"
@@ -41,8 +44,5 @@
     "type": "git",
     "url": "git+https://github.com/hannah-jemima/protoplan-unit-utils.git"
   },
-  "license": "MIT",
-  "devDependencies": {
-    "typescript": "^4.7.4"
-  }
+  "license": "MIT"
 }
