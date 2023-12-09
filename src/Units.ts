@@ -113,7 +113,7 @@ export default class Units
       }
 
       console.log("directFactor", path[i], path[i + 1], directFactor);
-      factor *= directFactor || 1;
+      factor = factor * (directFactor || 1);
       console.log("factor", factor);
     }
 
@@ -268,8 +268,6 @@ export default class Units
     // Fall back to a default unit conversion
     if(!factor)
       factor = searchUnitConversions();
-
-    console.log("getDirectFactor", fromUnitId, toUnitId, factor);
 
     return factor;
   };
