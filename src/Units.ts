@@ -93,13 +93,12 @@ export default class Units
       return 1;
 
     const path = this.getPath(fromUnitId, toUnitId, productId);
-    console.log("path", path);
     if(!path)
       return null;
 
     let factor = 1;
 
-    for(let i = 0; i < path.length - 2; ++i)
+    for(let i = 0; i < path.length - 1; ++i)
     {
       const directFactor = this.getDirectFactor(path[i], path[i + 1], productId);
       if(!directFactor)
