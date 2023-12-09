@@ -1,4 +1,4 @@
-import Units from "./Units.js";
+import Units from "./Units";
 
 
-export { Units }
+export { Units };
