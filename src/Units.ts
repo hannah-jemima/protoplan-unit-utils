@@ -92,9 +92,8 @@ export default class Units
     if(fromUnitId === toUnitId)
       return 1;
 
-    const graph = productId ? this.getProductGraph(productId) : this.genericGraph;
-
-    const path = this.getPathFromGraph(fromUnitId, toUnitId, graph);
+    const path = this.getPath(fromUnitId, toUnitId, productId);
+    console.log("path", path);
     if(!path)
       return null;
 
@@ -183,12 +182,14 @@ export default class Units
     })
   }
 
-  private getPathFromGraph(fromUnitId: number, toUnitId: number, graph: Graph)
+  private getPath(fromUnitId: number, toUnitId: number, productId?: number)
   {
     if(fromUnitId === toUnitId)
       return [];
 
-    let path = (graph.path(fromUnitId.toString(), toUnitId.toString()) as string[])
+    const graph = productId ? this.getProductGraph(productId) : this.genericGraph;
+
+    const path = (graph.path(fromUnitId.toString(), toUnitId.toString()) as string[])
       .map(id => Number(id));
 
     if(path.length < 2)
