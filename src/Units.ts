@@ -87,6 +87,8 @@ export default class Units
 
   public getFactor(fromUnitId: number, toUnitId: number, productId?: number)
   {
+    console.log("getFactor for productId", productId);
+
     if(fromUnitId === toUnitId)
       return 1;
 
@@ -111,7 +113,9 @@ export default class Units
           "Replacing with 1.");
       }
 
+      console.log("directFactor", path[i], path[i + 1], directFactor);
       factor *= directFactor || 1;
+      console.log("factor", factor);
     }
 
     return factor;
@@ -204,13 +208,6 @@ export default class Units
   private buildGraph(productId?: number)
   {
     const route = new Graph();
-
-    // Generic and product-specific
-    const directConversions = this.directConversions
-      .filter(c => c.productId === productId || c.productId === null)
-      .sort((a, b) => Number(b.productId) - Number(a.productId));
-
-    console.log("buildGraph", productId, directConversions);
 
     this.units.forEach((fromUnit: IUnit) =>
     {
