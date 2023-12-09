@@ -87,8 +87,6 @@ export default class Units
 
   public getFactor(fromUnitId: number, toUnitId: number, productId?: number)
   {
-    console.log("getFactor for productId", productId);
-
     if(fromUnitId === toUnitId)
       return 1;
 
@@ -111,9 +109,7 @@ export default class Units
           "Replacing with 1.");
       }
 
-      console.log("directFactor", path[i], path[i + 1], directFactor);
       factor = factor * (directFactor || 1);
-      console.log("factor", factor);
     }
 
     return factor;
