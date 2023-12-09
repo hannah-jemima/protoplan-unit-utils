@@ -188,7 +188,7 @@ export default class Units
 
     const graph = productId ? this.getProductGraph(productId) : this.genericGraph;
 
-    const path = (graph.path(fromUnitId.toString(), toUnitId.toString()) as string[])
+    const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
 
     if(path.length < 2)
