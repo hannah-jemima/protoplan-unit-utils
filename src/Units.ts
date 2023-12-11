@@ -91,7 +91,6 @@ export default class Units
       return 1;
 
     const path = this.getPath(fromUnitId, toUnitId, productId);
-    console.log("getFactor path", path);
     if(!path)
       return null;
 
