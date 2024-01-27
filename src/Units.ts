@@ -126,20 +126,22 @@ export default class Units
 
   public getUnitOptionsForProduct<T>(product: T & {
     productId: number,
-    formId: number,
+    formId?: number,
     recDoseUnitId?: number,
     amountUnitId: number })
   {
     const recDoseUnitId = product.recDoseUnitId;
     const amountUnitId = product.amountUnitId;
     const productId = product.productId;
+    const formId = product.formId;
 
     let validUnitIds = [amountUnitId];
     if(recDoseUnitId)
       validUnitIds.push(recDoseUnitId);
 
     // Same form
-    validUnitIds.push(...this.units.filter(u => u.formId === product.formId).map(u => u.unitId));
+    if(formId)
+      validUnitIds.push(...this.units.filter(u => u.formId === formId).map(u => u.unitId));
 
     // Appearing in product-specific unit conversions
     const unitConversions = this.directConversions.filter(c => c.productId === productId);
