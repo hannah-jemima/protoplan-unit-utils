@@ -29,7 +29,7 @@ export default class Units
   public getUnit(unitId: number)
   {
     const unit = this.units.find(u => u.unitId === unitId);
-    return unit ? ({ ...unit }) : null;
+    return unit ? ({ ...unit }) : undefined;
   }
 
   public getUnits()
@@ -92,7 +92,7 @@ export default class Units
 
     const path = this.getPath(fromUnitId, toUnitId, productId);
     if(!path)
-      return null;
+      return;
 
     let factor = 1;
 
@@ -119,7 +119,7 @@ export default class Units
   {
     const unit = this.getUnit(unitId);
     if(!unit)
-      return null;
+      return;
 
     return ({ label: unit.name, value: unit.unitId });
   }
@@ -127,7 +127,7 @@ export default class Units
   public getUnitOptionsForProduct<T>(product: T & {
     productId: number,
     formId: number,
-    recDoseUnitId?: number | null,
+    recDoseUnitId?: number,
     amountUnitId: number })
   {
     const recDoseUnitId = product.recDoseUnitId;
@@ -188,7 +188,7 @@ export default class Units
       .map(id => Number(id));
 
     if(path.length < 2)
-      return null;
+      return;
 
     return path;
   }
@@ -242,7 +242,7 @@ export default class Units
     const searchUnitConversions = (productId0?: number) =>
     {
       const unitConversions = this.directConversions
-        .filter(uc => productId0 ? uc.productId === productId0 : uc.productId === null)
+        .filter(uc => productId0 ? uc.productId === productId0 : uc.productId === undefined)
 
       let factor;
 
@@ -286,8 +286,8 @@ function factorIfConversionMatches(
     return factor;
   else if(toUnitId === from && fromUnitId === to)
     return 1.0 / factor;
-
-  return null;
+  else
+    return;
 }
 
 
