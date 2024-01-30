@@ -148,6 +148,11 @@ export default class Units
     validUnitIds.push(...unitConversions.map(c => c.fromUnitId));
     validUnitIds.push(...unitConversions.map(c => c.toUnitId));
 
+    // Add common small measure volumes if any already exist
+    const smalVolumeUnitIds = [2, 13, 30, 31, 33];
+    if(!smalVolumeUnitIds.every(value => !validUnitIds.includes(value)))
+      validUnitIds.push(...smalVolumeUnitIds);
+
     // Remove duplicates
     validUnitIds = validUnitIds.filter((id, i) => validUnitIds.indexOf(id) === i);
 
