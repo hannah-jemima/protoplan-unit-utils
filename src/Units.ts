@@ -19,10 +19,10 @@ export default class Units
   private productGraphs: ProductGraphs = {};
 
 
-  constructor(units: IUnit[], unitConversions: IUnitConversion[])
+  constructor(units: IUnit[], directConversions: IUnitConversion[])
   {
     this.units = units;
-    this.directConversions = unitConversions;
+    this.directConversions = directConversions;
     this.genericGraph = this.buildGraph();
   }
 
@@ -37,7 +37,7 @@ export default class Units
     return [...this.units.map(u => ({ ...u }))];
   }
 
-  public getUnitConversions()
+  public getDirectConversions()
   {
     return [...this.directConversions.map(u => ({ ...u }))];
   }
@@ -63,15 +63,15 @@ export default class Units
     this.rebuildGraphs();
   }
 
-  public addUnitConversions(unitConversions: IUnitConversion[])
+  public addDirectConversions(directConversions: IUnitConversion[])
   {
-    this.directConversions.push(...unitConversions
+    this.directConversions.push(...directConversions
       .filter(c => !this.directConversions.map(c0 => c0.unitConversionId).includes(c.unitConversionId)));
 
     this.rebuildGraphs();
   }
 
-  public removeUnitConversions(unitConversionIds: number[])
+  public removeDirectConversions(unitConversionIds: number[])
   {
     unitConversionIds.forEach(id =>
     {
@@ -85,12 +85,12 @@ export default class Units
     this.rebuildGraphs();
   }
 
-  public getFactor(fromUnitId: number, toUnitId: number, productId?: number)
+  public getFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return 1;
 
-    const path = this.getPath(fromUnitId, toUnitId, productId);
+    const path = this.getPath(fromUnitId, toUnitId, productIds);
     if(!path)
       return;
 
@@ -98,14 +98,14 @@ export default class Units
 
     for(let i = 0; i < path.length - 1; ++i)
     {
-      const directFactor = this.getDirectFactor(path[i], path[i + 1], productId);
+      const directFactor = this.getDirectFactor(path[i], path[i + 1], productIds);
       if(!directFactor)
       {
         console.error(
           "No direct factor found " +
             "fromUnitId " + path[i] + " " +
             "toUnitId " + path[i + 1] + " " +
-            "for productId " + productId + ". " +
+            "for productIds " + productIds + ". " +
           "Replacing with 1.");
       }
 
@@ -160,7 +160,7 @@ export default class Units
     validUnitIds.forEach(unitId =>
     {
       // Check convertible with amountUnitId;
-      const factor = this.getFactor(unitId, amountUnitId, productId);
+      const factor = this.getFactor(unitId, amountUnitId, [productId]);
       if(!factor)
         return;
 
@@ -180,16 +180,16 @@ export default class Units
 
     productIds.forEach(id =>
     {
-      this.productGraphs[id] = this.buildGraph(id);
+      this.productGraphs[id] = this.buildGraph([id]);
     })
   }
 
-  private getPath(fromUnitId: number, toUnitId: number, productId?: number)
+  private getPath(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return [];
 
-    const graph = productId ? this.getProductGraph(productId) : this.genericGraph;
+    const graph = productIds?.length ? this.getProductGraph(productIds) : this.genericGraph;
 
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
@@ -200,15 +200,19 @@ export default class Units
     return path;
   }
 
-  private getProductGraph(productId: number)
+  private getProductGraph(productIds: number[])
   {
-    if(!this.productGraphs[productId])
-      this.productGraphs[productId] = this.buildGraph(productId);
+    let graph;
 
-    return this.productGraphs[productId];
+    if(productIds.length === 1)
+      graph = this.productGraphs[productIds[0]];
+
+    graph = graph ?? this.buildGraph(productIds);
+
+    return graph;
   }
 
-  private buildGraph(productId?: number)
+  private buildGraph(productIds?: number[])
   {
     const route = new Graph();
 
@@ -221,8 +225,8 @@ export default class Units
       {
         const toUnitId = toUnit.unitId;
 
-        // Prefer product-specific unit unit conversions
-        let factor = this.getDirectFactor(fromUnitId, toUnitId, productId);
+        // Prefer product-specific unit conversions
+        let factor = this.getDirectFactor(fromUnitId, toUnitId, productIds);
         if(factor)
         {
           nodePaths[toUnitId] = factor;
@@ -241,15 +245,17 @@ export default class Units
   }
 
   // Search for direct unit conversion factor (returns 0 if none found)
-  private getDirectFactor(fromUnitId: number, toUnitId: number, productId?: number)
+  private getDirectFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return 1;
 
-    const searchUnitConversions = (productId0?: number) =>
+    const searchUnitConversions = (productIds0?: number[]) =>
     {
       const unitConversions = this.directConversions
-        .filter(uc => productId0 ? uc.productId === productId0 : uc.productId === undefined)
+        .filter(uc => productIds0?.length ?
+          !productIds0.every(id => id !== uc.productId) :
+          uc.productId === undefined)
 
       let factor;
 
@@ -264,8 +270,8 @@ export default class Units
     let factor;
 
     // Prefer product-specific unit conversion
-    if(productId)
-      factor = searchUnitConversions(productId);
+    if(productIds?.length)
+      factor = searchUnitConversions(productIds);
 
     // Fall back to a default unit conversion
     if(!factor)
