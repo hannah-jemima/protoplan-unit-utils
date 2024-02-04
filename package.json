@@ -14,7 +14,7 @@
     "lib/"
   ],
   "dependencies": {
-    "@protoplan/types": "65.0.0",
+    "@protoplan/types": "72.0.0",
     "@types/node-dijkstra": "^2.5.2",
     "node-dijkstra": "^2.5.0"
   },
