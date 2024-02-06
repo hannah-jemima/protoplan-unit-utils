@@ -34,6 +34,8 @@ export default class Units
 
   public async getUnit(unitId: number)
   {
+    await this.getGenericUnitsAndConversions();
+
     let unit = this.genericUnits.find(u => u.unitId === unitId);
     if(!unit)
       unit = (await this.selectUnits({ unitId }))[0];
@@ -43,13 +45,17 @@ export default class Units
 
   public async getUnits(productId?: number)
   {
+    await this.getGenericUnitsAndConversions();
+
     const units = productId ? await this.selectUnits({ productId }) : this.genericUnits;
 
     return [...units.map(u => ({ ...u }))];
   }
 
-  public getGenericDirectConversions()
+  public async getGenericDirectConversions()
   {
+    await this.getGenericUnitsAndConversions();
+
     return [...this.genericDirectConversions.map(u => ({ ...u }))];
   }
 
@@ -85,6 +91,8 @@ export default class Units
 
   public async getUnitOption(unitId: number)
   {
+    await this.getGenericUnitsAndConversions();
+
     const unit = this.genericUnits.find(u => u.unitId === unitId) || await this.getUnit(unitId);
 
     return unit ? ({ label: unit.name, value: unit.unitId }) : undefined;
@@ -96,6 +104,8 @@ export default class Units
     recDoseUnitId?: number,
     amountUnitId: number })
   {
+    await this.getGenericUnitsAndConversions();
+
     const recDoseUnitId = product.recDoseUnitId;
     const amountUnitId = product.amountUnitId;
     const productId = product.productId;
@@ -206,8 +216,7 @@ export default class Units
 
   private async buildGenericGraph()
   {
-    this.genericUnits = await this.selectUnits();
-    this.genericDirectConversions = await this.selectDirectConversions();
+    await this.getGenericUnitsAndConversions();
 
     const graph = new Graph;
 
@@ -229,6 +238,15 @@ export default class Units
     };
 
     return graph;
+  }
+
+  private async getGenericUnitsAndConversions()
+  {
+    if(!this.genericUnits.length)
+      this.genericUnits = await this.selectUnits();
+
+    if(!this.genericDirectConversions.length)
+      this.genericDirectConversions = await this.selectDirectConversions();
   }
 
   private async getPreferredDirectFactor(fromUnitId: number, toUnitId: number)
