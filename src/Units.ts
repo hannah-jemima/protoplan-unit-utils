@@ -32,7 +32,7 @@ export default class Units
     this.selectDirectConversions = selectDirectConversions;
   }
 
-  public async getUnit(unitId?: number)
+  public async getUnit(unitId: number)
   {
     let unit = this.genericUnits.find(u => u.unitId === unitId);
     if(!unit)
@@ -127,7 +127,7 @@ export default class Units
       // Check convertible with amountUnitId;
       const factor = this.getFactor(unitId, amountUnitId, [productId]);
       if(!factor)
-        return;
+        continue;
 
       const option = await this.getUnitOption(unitId);
       if(option)
