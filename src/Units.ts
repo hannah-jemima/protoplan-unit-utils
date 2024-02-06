@@ -3,13 +3,12 @@ import Graph from 'node-dijkstra';
 
 interface PathList
 {
-  [node: number]: number;
+  [node: number]: number | undefined;
 }
 
-// Max 30
-interface ProductGraphs
+interface ProductNodes
 {
-  [productId: number]: Graph
+  [productId: number]: { unitId: number, paths: PathList }[] | undefined;
 }
 
 type SelectUnits = (filters?: { productId?: number, unitId?: number }) => Promise<IUnit[]>;
@@ -20,14 +19,12 @@ export default class Units
   private genericUnits: IUnit[] = [];
   private genericDirectConversions: IUnitConversion[] = [];   // Max 50
   private genericGraph: Graph | undefined = undefined;
-  private productGraphs: ProductGraphs = {};
+  private productNodes: ProductNodes = {};
   private selectUnits: SelectUnits = () => Promise.resolve([]);
   private selectDirectConversions: SelectDirectConversions = () => Promise.resolve([]);
 
 
   constructor(
-    //genericUnits: IUnit[],
-    //genericUnitConversions: IUnitConversion[],
     selectUnits: SelectUnits,
     selectDirectConversions: SelectDirectConversions)
   {
@@ -56,12 +53,12 @@ export default class Units
     return [...this.genericDirectConversions.map(u => ({ ...u }))];
   }
 
-  public getFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
+  public async getFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return 1;
 
-    const path = this.getPath(fromUnitId, toUnitId, productIds);
+    const path = await this.getPath(fromUnitId, toUnitId, productIds);
     if(!path)
       return;
 
@@ -69,7 +66,7 @@ export default class Units
 
     for(let i = 0; i < path.length - 1; ++i)
     {
-      const directFactor = this.getDirectFactor(path[i], path[i + 1], productIds);
+      const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1]);
       if(!directFactor)
       {
         console.error(
@@ -88,14 +85,12 @@ export default class Units
 
   public async getUnitOption(unitId: number)
   {
-    const unit = await this.getUnit(unitId);
-    if(!unit)
-      return;
+    const unit = this.genericUnits.find(u => u.unitId === unitId) || await this.getUnit(unitId);
 
-    return ({ label: unit.name, value: unit.unitId });
+    return unit ? ({ label: unit.name, value: unit.unitId }) : undefined;
   }
 
-  public getUnitOptionsForProduct<T>(product: T & {
+  public async getUnitOptionsForProduct<T>(product: T & {
     productId: number,
     formId?: number,
     recDoseUnitId?: number,
@@ -112,12 +107,11 @@ export default class Units
 
     // Same form
     if(formId)
-      validUnitIds.push(...this.units.filter(u => u.formId === formId).map(u => u.unitId));
+      validUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
 
     // Appearing in product-specific unit conversions
-    const unitConversions = this.directConversions.filter(c => c.productId === productId);
-    validUnitIds.push(...unitConversions.map(c => c.fromUnitId));
-    validUnitIds.push(...unitConversions.map(c => c.toUnitId));
+    const productUnits = await this.selectUnits({ productId });
+    validUnitIds.push(...productUnits.map(u => u.unitId));
 
     // Add common small measure volumes if any already exist
     const smalVolumeUnitIds = [2, 13, 30, 31, 33];
@@ -128,17 +122,17 @@ export default class Units
     validUnitIds = validUnitIds.filter((id, i) => validUnitIds.indexOf(id) === i);
 
     let validUnitOptions: IOption[] = [];
-    validUnitIds.forEach(unitId =>
+    for(const unitId of validUnitIds)
     {
       // Check convertible with amountUnitId;
       const factor = this.getFactor(unitId, amountUnitId, [productId]);
       if(!factor)
         return;
 
-      const option = this.getUnitOption(unitId);
+      const option = await this.getUnitOption(unitId);
       if(option)
         validUnitOptions.push(option);
-    });
+    };
 
     return validUnitOptions.sort((a, b) => a.label.localeCompare(b.label));
   }
@@ -148,7 +142,7 @@ export default class Units
     if(fromUnitId === toUnitId)
       return [];
 
-    const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
+    const graph = productIds?.length ? await this.buildProductGraph(productIds) : await this.getGenericGraph();
 
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
@@ -159,117 +153,109 @@ export default class Units
     return path;
   }
 
-  private async getProductGraph(productIds: number[])
+  private async buildProductGraph(productIds: number[])
   {
-    let graph;
+    const graph = await this.getGenericGraph();
 
-    if(productIds.length === 1)
-      graph = this.productGraphs[productIds[0]];
-
-    if(!graph)
+    for(const productId of productIds)
     {
-      graph = await this.buildGraph(productIds);
+      const nodes = this.productNodes[productId] || await this.buildProductNodes(productId);
 
-      if(productIds.length === 1)
-        this.productGraphs[productIds[0]] = graph;
+      nodes.forEach(n => graph.addNode(n.unitId.toString(), n.paths));
     }
 
     return graph;
   }
 
-  private async buildGraph(productIds?: number[])
+  private async buildProductNodes(productId: number)
   {
-    let graph = await this.getGenericGraph();
+    const nodes = [];
 
-    if(!productIds?.length && graph)
-      return graph;
+    const productUnits = await this.selectUnits({ productId });
+    const productUnitConversions = await this.selectDirectConversions(productId);
 
-    let units = this.genericUnits;
-    if(productIds?.length)
+    for(const unit of productUnits)
     {
-      for(const productId of productIds)
+      const nodePaths: PathList = {};
+
+      for(const uc of productUnitConversions.filter(uc => uc.fromUnitId === unit.unitId))
       {
-        units.push(...await this.selectUnits({ productId }));
+          nodePaths[uc.toUnitId] = uc.factor;
       }
-    }
+
+      for(const uc of productUnitConversions.filter(uc => uc.toUnitId === unit.unitId))
+      {
+        if(!uc.factor)
+          continue;
+
+        nodePaths[uc.fromUnitId] = 1 / uc.factor;
+      }
+
+      nodes.push({ unitId: unit.unitId, paths: nodePaths });
+    };
+
+    this.productNodes[productId] = nodes;
+
+    return nodes;
+  }
+
+  private async getGenericGraph()
+  {
+    return this.genericGraph || await this.buildGenericGraph();
+  }
+
+  private async buildGenericGraph()
+  {
+    this.genericUnits = await this.selectUnits();
+    this.genericDirectConversions = await this.selectDirectConversions();
+
+    const graph = new Graph;
+
+    const units = this.genericUnits;
 
     for(const fromUnit of units)
     {
-      const fromUnitId = fromUnit.unitId;
-      let nodePaths: PathList = {};
+      const nodePaths: PathList = {};
 
       for(const toUnit of units)
       {
-        const toUnitId = toUnit.unitId;
-
-        let factor = await productIds?.reduce(
-          async(fPromise, id) => await fPromise ? fPromise : this.getDirectFactor(fromUnitId, toUnitId, id),
-          <Promise<undefined | number>>Promise.resolve(undefined));
+        const factor = await this.getPreferredDirectFactor(fromUnit.unitId, toUnit.unitId);
 
         if(factor)
-          nodePaths[toUnitId] = factor;
+          nodePaths[toUnit.unitId] = factor;
       };
 
-      graph.addNode(fromUnitId.toString(), nodePaths);
+      graph.addNode(fromUnit.unitId.toString(), nodePaths);
     };
 
     return graph;
   }
 
-  private async getGenericGraph()
-  {
-    if(!this.genericGraph)
-    {
-      this.genericUnits = await this.selectUnits();
-      this.genericDirectConversions = await this.selectDirectConversions();
-      this.genericGraph = new Graph();
-    }
-
-    return this.genericGraph;
-  }
-
-  // Search for direct unit conversion factor (returns 0 if none found)
-  private async getDirectFactor(fromUnitId: number, toUnitId: number, productId?: number)
+  private async getPreferredDirectFactor(fromUnitId: number, toUnitId: number)
   {
     if(fromUnitId === toUnitId)
       return 1;
 
-    let factor = await this.getExplicitDirectFactor(fromUnitId, toUnitId, productId);
+    let factor = await this.getDirectFactor(fromUnitId, toUnitId);
     if(factor)
       return factor;
 
     // Unit conversions of fallback generic units with matching name
     const fromUnit = await this.getUnit(fromUnitId);
     const toUnit = await this.getUnit(toUnitId);
-    const genericFromUnit: IUnit | undefined =
-      this.genericUnits.filter(u => !u.productId && u.name === fromUnit?.name)[0];
-    const genericToUnit: IUnit | undefined =
-      this.genericUnits.filter(u => !u.productId && u.name === toUnit?.name)[0];
+    const genericFromUnit = this.genericUnits.find(u => !u.productId && u.name === fromUnit?.name);
+    const genericToUnit = this.genericUnits.find(u => !u.productId && u.name === toUnit?.name);
 
-    factor = await this.getExplicitDirectFactor(
-      genericFromUnit.unitId || fromUnitId,
-      genericToUnit.unitId || toUnitId,
-      productId);
+    factor = await this.getDirectFactor(genericFromUnit?.unitId || fromUnitId, genericToUnit?.unitId || toUnitId);
 
     return factor;
   };
 
-  private async getExplicitDirectFactor(fromUnitId: number, toUnitId: number, productId?: number)
+  private async getDirectFactor(fromUnitId: number, toUnitId: number, directConversions?: IUnitConversion[])
   {
     let factor;
 
-    // Prefer product-specific units
-    if(productId)
-    {
-      for(const uc of await this.selectDirectConversions(productId))
-      {
-        factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
-        if(factor)
-          return factor;
-      }
-    }
-
-    for(const uc of this.genericDirectConversions)
+    for(const uc of directConversions ?? this.genericDirectConversions)
     {
       factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
       if(factor)
@@ -278,7 +264,6 @@ export default class Units
   };
 
 }
-
 
 
 
