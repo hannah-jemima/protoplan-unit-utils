@@ -34,7 +34,7 @@ export default class Units
 
   public async getUnit(unitId: number)
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     let unit = this.genericUnits.find(u => u.unitId === unitId);
     if(!unit)
@@ -45,7 +45,7 @@ export default class Units
 
   public async getUnits(productId?: number)
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     const units = productId ? await this.selectUnits({ productId }) : this.genericUnits;
 
@@ -54,7 +54,7 @@ export default class Units
 
   public async getGenericDirectConversions()
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     return [...this.genericDirectConversions.map(u => ({ ...u }))];
   }
@@ -72,7 +72,7 @@ export default class Units
 
     for(let i = 0; i < path.length - 1; ++i)
     {
-      const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1]);
+      const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
       if(!directFactor)
       {
         console.error(
@@ -91,7 +91,7 @@ export default class Units
 
   public async getUnitOption(unitId: number)
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     const unit = this.genericUnits.find(u => u.unitId === unitId) || await this.getUnit(unitId);
 
@@ -104,7 +104,7 @@ export default class Units
     recDoseUnitId?: number,
     amountUnitId: number })
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     const recDoseUnitId = product.recDoseUnitId;
     const amountUnitId = product.amountUnitId;
@@ -190,7 +190,7 @@ export default class Units
 
       for(const uc of productUnitConversions.filter(uc => uc.fromUnitId === unit.unitId))
       {
-          nodePaths[uc.toUnitId] = uc.factor;
+        nodePaths[uc.toUnitId] = uc.factor;
       }
 
       for(const uc of productUnitConversions.filter(uc => uc.toUnitId === unit.unitId))
@@ -216,7 +216,7 @@ export default class Units
 
   private async buildGenericGraph()
   {
-    await this.getGenericUnitsAndConversions();
+    await this.retrieveGenericUnitsAndConversions();
 
     const graph = new Graph;
 
@@ -240,7 +240,7 @@ export default class Units
     return graph;
   }
 
-  private async getGenericUnitsAndConversions()
+  private async retrieveGenericUnitsAndConversions()
   {
     if(!this.genericUnits.length)
       this.genericUnits = await this.selectUnits();
@@ -249,12 +249,12 @@ export default class Units
       this.genericDirectConversions = await this.selectDirectConversions();
   }
 
-  private async getPreferredDirectFactor(fromUnitId: number, toUnitId: number)
+  private async getPreferredDirectFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return 1;
 
-    let factor = await this.getDirectFactor(fromUnitId, toUnitId);
+    let factor = await this.getDirectFactor(fromUnitId, toUnitId, productIds);
     if(factor)
       return factor;
 
@@ -269,11 +269,19 @@ export default class Units
     return factor;
   };
 
-  private async getDirectFactor(fromUnitId: number, toUnitId: number, directConversions?: IUnitConversion[])
+  private async getDirectFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
-    let factor;
+    if(fromUnitId === toUnitId)
+      return 1;
 
-    for(const uc of directConversions ?? this.genericDirectConversions)
+    let factor = productIds
+      ?.map(id => this.productNodes[id])
+      ?.flat()
+      ?.find(n => n && n.unitId === fromUnitId)?.paths[toUnitId];
+    if(factor)
+      return factor;
+
+    for(const uc of this.genericDirectConversions)
     {
       factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
       if(factor)
