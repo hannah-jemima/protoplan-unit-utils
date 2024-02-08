@@ -59,36 +59,6 @@ export default class Units
     return [...this.genericDirectConversions.map(u => ({ ...u }))];
   }
 
-  public async getFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
-  {
-    if(fromUnitId === toUnitId)
-      return 1;
-
-    const path = await this.getPath(fromUnitId, toUnitId, productIds);
-    if(!path)
-      return;
-
-    let factor = 1;
-
-    for(let i = 0; i < path.length - 1; ++i)
-    {
-      const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
-      if(!directFactor)
-      {
-        console.error(
-          "No direct factor found " +
-            "fromUnitId " + path[i] + " " +
-            "toUnitId " + path[i + 1] + " " +
-            "for productIds " + productIds + ". " +
-          "Replacing with 1.");
-      }
-
-      factor = factor * (directFactor || 1);
-    }
-
-    return factor;
-  }
-
   public async getUnitOption(unitId: number)
   {
     await this.retrieveGenericUnitsAndConversions();
@@ -136,6 +106,9 @@ export default class Units
     {
       // Check convertible with amountUnitId;
       const factor = this.getFactor(unitId, amountUnitId, [productId]);
+      if(productId === 20)
+        console.log("factor", factor, "validUnitId", unitId, "amountUnitId", amountUnitId);
+
       if(!factor)
         continue;
 
@@ -145,6 +118,40 @@ export default class Units
     };
 
     return validUnitOptions.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  public async getFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
+  {
+    if(fromUnitId === toUnitId)
+      return 1;
+
+    const path = await this.getPath(fromUnitId, toUnitId, productIds);
+    if(productIds && productIds[0] === 20)
+      console.log("path", path);
+    if(!path)
+      return;
+
+    let factor = 1;
+
+    for(let i = 0; i < path.length - 1; ++i)
+    {
+      const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
+      if(productIds && productIds[0] === 20)
+        console.log("directFactor", directFactor, "path[i], path[i + 1]", path[i], path[i + 1]);
+      if(!directFactor)
+      {
+        console.error(
+          "No direct factor found " +
+            "fromUnitId " + path[i] + " " +
+            "toUnitId " + path[i + 1] + " " +
+            "for productIds " + productIds + ". " +
+          "Replacing with 1.");
+      }
+
+      factor = factor * (directFactor || 1);
+    }
+
+    return factor;
   }
 
   private async getPath(fromUnitId: number, toUnitId: number, productIds?: number[])
