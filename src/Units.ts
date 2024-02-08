@@ -105,7 +105,7 @@ export default class Units
     for(const unitId of validUnitIds)
     {
       // Check convertible with amountUnitId;
-      const factor = this.getFactor(unitId, amountUnitId, [productId]);
+      const factor = await this.getFactor(unitId, amountUnitId, [productId]);
       if(productId === 20)
         console.log("factor", factor, "validUnitId", unitId, "amountUnitId", amountUnitId);
 
