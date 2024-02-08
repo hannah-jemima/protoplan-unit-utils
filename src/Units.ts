@@ -81,33 +81,33 @@ export default class Units
     const productId = product.productId;
     const formId = product.formId;
 
-    let validUnitIds = [amountUnitId];
+    let possibleUnitIds = [amountUnitId];
     if(recDoseUnitId)
-      validUnitIds.push(recDoseUnitId);
+      possibleUnitIds.push(recDoseUnitId);
 
     // Same form
     if(formId)
-      validUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
+      possibleUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
 
     // Appearing in product-specific unit conversions
     const productUnits = await this.selectUnits({ productId });
-    validUnitIds.push(...productUnits.map(u => u.unitId));
+    possibleUnitIds.push(...productUnits.map(u => u.unitId));
 
     // Add common small measure volumes if any already exist
     const smalVolumeUnitIds = [2, 13, 30, 31, 33];
-    if(!smalVolumeUnitIds.every(value => !validUnitIds.includes(value)))
-      validUnitIds.push(...smalVolumeUnitIds);
+    if(!smalVolumeUnitIds.every(value => !possibleUnitIds.includes(value)))
+      possibleUnitIds.push(...smalVolumeUnitIds);
 
     // Remove duplicates
-    validUnitIds = validUnitIds.filter((id, i) => validUnitIds.indexOf(id) === i);
+    possibleUnitIds = possibleUnitIds.filter((id, i) => possibleUnitIds.indexOf(id) === i);
 
     let validUnitOptions: IOption[] = [];
-    for(const unitId of validUnitIds)
+    for(const unitId of possibleUnitIds)
     {
       // Check convertible with amountUnitId;
       const factor = await this.getFactor(unitId, amountUnitId, [productId]);
       if(productId === 20)
-        console.log("factor", factor, "validUnitId", unitId, "amountUnitId", amountUnitId);
+        console.log("factor", factor, "possibleUnitId", unitId, "amountUnitId", amountUnitId);
 
       if(!factor)
         continue;
@@ -271,9 +271,7 @@ export default class Units
     const genericFromUnit = this.genericUnits.find(u => !u.productId && u.name === fromUnit?.name);
     const genericToUnit = this.genericUnits.find(u => !u.productId && u.name === toUnit?.name);
 
-    factor = await this.getDirectFactor(genericFromUnit?.unitId || fromUnitId, genericToUnit?.unitId || toUnitId);
-
-    return factor;
+    return await this.getDirectFactor(genericFromUnit?.unitId || fromUnitId, genericToUnit?.unitId || toUnitId);
   };
 
   private async getDirectFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
@@ -282,17 +280,16 @@ export default class Units
       return 1;
 
     let factor = productIds
-      ?.map(id => this.productNodes[id])
-      ?.flat()
+      ?.map(id => this.productNodes[id])?.flat()
       ?.find(n => n && n.unitId === fromUnitId)?.paths[toUnitId];
     if(factor)
-      return factor;
+      return Number(factor);
 
     for(const uc of this.genericDirectConversions)
     {
       factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
       if(factor)
-        return factor;
+        return Number(factor);
     }
   };
 
