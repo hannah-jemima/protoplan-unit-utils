@@ -89,9 +89,14 @@ export default class Units
     if(formId)
       possibleUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
 
-    // Appearing in product-specific unit conversions
+    // Product-specific units
     const productUnits = await this.selectUnits({ productId });
     possibleUnitIds.push(...productUnits.map(u => u.unitId));
+
+    // Appearing in product-specific unit conversions
+    const ucUnitIds = (await this.selectDirectConversions(productId))
+      .map(uc => [uc.fromUnitId, uc.toUnitId]).flat();
+    possibleUnitIds.push(...ucUnitIds);
 
     // Add common small measure volumes if any already exist
     const smalVolumeUnitIds = [2, 13, 30, 31, 33];
@@ -113,6 +118,8 @@ export default class Units
         continue;
 
       const option = await this.getUnitOption(unitId);
+      if(productId === 20)
+        console.log("option", option);
       if(option)
         validUnitOptions.push(option);
     };
