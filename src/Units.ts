@@ -68,6 +68,7 @@ export default class Units
     return unit ? ({ label: unit.name, value: unit.unitId }) : undefined;
   }
 
+  // TODO: derive from productNodes and genericGraph nodes where unitId matches form
   public async getUnitOptionsForProduct<T>(product: T & {
     productId: number,
     formId?: number,
@@ -85,7 +86,7 @@ export default class Units
     if(recDoseUnitId)
       possibleUnitIds.push(recDoseUnitId);
 
-    // Same form
+    // Generic units with same form
     if(formId)
       possibleUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
 
@@ -111,15 +112,10 @@ export default class Units
     {
       // Check convertible with amountUnitId;
       const factor = await this.getFactor(unitId, amountUnitId, [productId]);
-      if(productId === 20)
-        console.log("factor", factor, "possibleUnitId", unitId, "amountUnitId", amountUnitId);
-
       if(!factor)
         continue;
 
       const option = await this.getUnitOption(unitId);
-      if(productId === 20)
-        console.log("option", option);
       if(option)
         validUnitOptions.push(option);
     };
@@ -133,8 +129,6 @@ export default class Units
       return 1;
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
-    if(productIds && productIds[0] === 20)
-      console.log("path", path);
     if(!path)
       return;
 
@@ -143,8 +137,6 @@ export default class Units
     for(let i = 0; i < path.length - 1; ++i)
     {
       const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
-      if(productIds && productIds[0] === 20)
-        console.log("directFactor", directFactor, "path[i], path[i + 1]", path[i], path[i + 1]);
       if(!directFactor)
       {
         console.error(
