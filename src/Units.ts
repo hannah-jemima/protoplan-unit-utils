@@ -129,8 +129,6 @@ export default class Units
       return 1;
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
-    if(fromUnitId === 15 || toUnitId === 15 && productIds && productIds[0] === 20)
-      console.log("path", path);
     if(!path)
       return;
 
