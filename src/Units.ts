@@ -129,6 +129,8 @@ export default class Units
       return 1;
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
+    if(productIds && productIds[0] === 819)
+      console.log("path", path);
     if(!path)
       return;
 
@@ -139,6 +141,8 @@ export default class Units
       const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
       if(fromUnitId === 15 || toUnitId === 15 && productIds && productIds[0] === 20)
         console.log("directFactor", directFactor, "path[i], path[i + 1]", path[i], path[i + 1]);
+      if(productIds && productIds[0] === 819)
+        console.log("directFactor", directFactor, path[i], path[i + 1]);
       if(!directFactor)
       {
         console.error(
@@ -150,7 +154,12 @@ export default class Units
       }
 
       factor = factor * (directFactor || 1);
+      if(productIds && productIds[0] === 819)
+        console.log("factor", factor);
     }
+
+    if(productIds && productIds[0] === 819)
+      console.log("final factor", factor);
 
     return factor;
   }
