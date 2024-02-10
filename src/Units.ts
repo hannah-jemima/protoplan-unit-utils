@@ -139,10 +139,6 @@ export default class Units
     for(let i = 0; i < path.length - 1; ++i)
     {
       const directFactor = await this.getPreferredDirectFactor(path[i], path[i + 1], productIds);
-      if(fromUnitId === 15 || toUnitId === 15 && productIds && productIds[0] === 20)
-        console.log("directFactor", directFactor, "path[i], path[i + 1]", path[i], path[i + 1]);
-      if(productIds && productIds[0] === 819)
-        console.log("directFactor", directFactor, path[i], path[i + 1]);
       if(!directFactor)
       {
         console.error(
@@ -272,6 +268,8 @@ export default class Units
       return 1;
 
     let factor = await this.getDirectFactor(fromUnitId, toUnitId, productIds);
+    if(productIds && productIds[0] === 819)
+      console.log("directFactor", factor, fromUnitId, toUnitId);
     if(factor)
       return factor;
 
@@ -280,8 +278,14 @@ export default class Units
     const toUnit = await this.getUnit(toUnitId);
     const genericFromUnit = this.genericUnits.find(u => !u.productId && u.name === fromUnit?.name);
     const genericToUnit = this.genericUnits.find(u => !u.productId && u.name === toUnit?.name);
+    const genericFactor = await this.getDirectFactor(
+      genericFromUnit?.unitId || fromUnitId,
+      genericToUnit?.unitId || toUnitId);
 
-    return await this.getDirectFactor(genericFromUnit?.unitId || fromUnitId, genericToUnit?.unitId || toUnitId);
+    if(productIds && productIds[0] === 819)
+      console.log("generic directFactor")
+
+    return genericFactor;
   };
 
   private async getDirectFactor(fromUnitId: number, toUnitId: number, productIds?: number[])
