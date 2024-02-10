@@ -291,7 +291,7 @@ export default class Units
     const productUnitConversions = productIds ? (await Promise.all(productIds
       .map(async id => await this.selectDirectConversions(id)))).flat() : [];
 
-    for(const uc of this.genericDirectConversions.concat(productUnitConversions))
+    for(const uc of productUnitConversions.concat(this.genericDirectConversions))
     {
       const factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
       if(factor)
