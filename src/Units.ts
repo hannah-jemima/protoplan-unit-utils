@@ -269,7 +269,7 @@ export default class Units
 
     let factor = await this.getDirectFactor(fromUnitId, toUnitId, productIds);
     if(productIds && productIds[0] === 819)
-      console.log("directFactor", factor, fromUnitId, toUnitId);
+      console.log("directFactor", factor, fromUnitId, toUnitId, "productIds", productIds);
     if(factor)
       return factor;
 
