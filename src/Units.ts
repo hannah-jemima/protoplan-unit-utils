@@ -19,7 +19,6 @@ export default class Units
   private genericUnits: IUnit[] = [];
   private genericDirectConversions: IUnitConversion[] = [];   // Max 50
   private genericGraph: Graph | undefined = undefined;
-  private productNodes: ProductNodes = {};
   private selectUnits: SelectUnits = () => Promise.resolve([]);
   private selectDirectConversions: SelectDirectConversions = () => Promise.resolve([]);
 
@@ -289,15 +288,12 @@ export default class Units
     if(fromUnitId === toUnitId)
       return 1;
 
-    let factor = productIds
-      ?.map(id => this.productNodes[id])?.flat()
-      ?.find(n => n && n.unitId === fromUnitId)?.paths[toUnitId];
-    if(factor)
-      return Number(factor);
+    const productUnitConversions = productIds ? (await Promise.all(productIds
+      .map(async id => await this.selectDirectConversions(id)))).flat() : [];
 
-    for(const uc of this.genericDirectConversions)
+    for(const uc of this.genericDirectConversions.concat(productUnitConversions))
     {
-      factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
+      const factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
       if(factor)
         return Number(factor);
     }
