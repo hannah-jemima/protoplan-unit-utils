@@ -128,8 +128,6 @@ export default class Units
       return 1;
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
-    if(productIds && productIds[0] === 2056)
-      console.log("path", path);
     if(!path)
       return;
 
@@ -149,12 +147,7 @@ export default class Units
       }
 
       factor = factor * (directFactor || 1);
-      if(productIds && productIds[0] === 2056)
-        console.log("factor", factor);
     }
-
-    if(productIds && productIds[0] === 2056)
-      console.log("final factor", factor);
 
     return factor;
   }
@@ -263,8 +256,6 @@ export default class Units
       return 1;
 
     let factor = await this.getDirectFactor(fromUnitId, toUnitId, productIds);
-    if(productIds && productIds[0] === 2056)
-      console.log("directFactor", factor, fromUnitId, toUnitId, "productIds", productIds);
     if(factor)
       return factor;
 
@@ -276,9 +267,6 @@ export default class Units
     const genericFactor = await this.getDirectFactor(
       genericFromUnit?.unitId || fromUnitId,
       genericToUnit?.unitId || toUnitId);
-
-    if(productIds && productIds[0] === 2056)
-      console.log("generic directFactor")
 
     return genericFactor;
   };
