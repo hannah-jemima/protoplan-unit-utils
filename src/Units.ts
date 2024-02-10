@@ -176,59 +176,51 @@ export default class Units
     return path;
   }
 
-  private async buildProductGraph(productIds: number[])
-  {
-    const graph = await this.getGenericGraph();
-
-    for(const productId of productIds)
-    {
-      const nodes = this.productNodes[productId] || await this.buildProductNodes(productId);
-
-      nodes.forEach(n => graph.addNode(n.unitId.toString(), n.paths));
-    }
-
-    return graph;
-  }
-
-  private async buildProductNodes(productId: number)
-  {
-    const nodes = [];
-
-    const productUnits = await this.selectUnits({ productId });
-    const productUnitConversions = await this.selectDirectConversions(productId);
-    if(productId === 2056)
-      console.log("productUnitConversions", productUnitConversions);
-
-    for(const unit of productUnits)
-    {
-      const nodePaths: PathList = {};
-
-      for(const uc of productUnitConversions.filter(uc => uc.fromUnitId === unit.unitId))
-      {
-        nodePaths[uc.toUnitId] = uc.factor;
-      }
-
-      for(const uc of productUnitConversions.filter(uc => uc.toUnitId === unit.unitId))
-      {
-        if(!uc.factor)
-          continue;
-
-        nodePaths[uc.fromUnitId] = 1 / uc.factor;
-      }
-
-      nodes.push({ unitId: unit.unitId, paths: nodePaths });
-    };
-
-    this.productNodes[productId] = nodes;
-    if(productId === 2056)
-      console.log("productNodes", this.productNodes[productId]);
-
-    return nodes;
-  }
-
   private async getGenericGraph()
   {
     return this.genericGraph || await this.buildGenericGraph();
+  }
+
+  private async buildProductGraph(productIds: number[])
+  {
+    await this.retrieveGenericUnitsAndConversions();
+
+    const productUnitConversions = (await Promise.all(productIds
+      .map(async id => await this.selectDirectConversions(id)))).flat();
+
+    const graph = new Graph;
+
+    const units = this.genericUnits;
+
+    const fromUnitIds = units.map(u => u.unitId);
+    const productUcFromUnitIds = productUnitConversions.map(uc => uc.fromUnitId);
+    let uniqueFromUnitIds = fromUnitIds.concat(productUcFromUnitIds);
+    uniqueFromUnitIds = uniqueFromUnitIds.filter((id, i) => i === uniqueFromUnitIds.indexOf(id));
+
+    const toUnitIds = units.map(u => u.unitId);
+    const productUcToUnitIds = productUnitConversions.map(uc => uc.toUnitId);
+    let uniqueToUnitIds = toUnitIds.concat(productUcToUnitIds);
+    uniqueToUnitIds = uniqueToUnitIds.filter((id, i) => i === uniqueToUnitIds.indexOf(id));
+
+    for(const fromUnitId of uniqueFromUnitIds)
+    {
+      const nodePaths: PathList = {};
+
+      for(const toUnitId of uniqueToUnitIds)
+      {
+        const ucFactor = productUnitConversions
+          .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
+
+        const factor = ucFactor || await this.getPreferredDirectFactor(fromUnitId, toUnitId);
+
+        if(factor)
+          nodePaths[toUnitId] = factor;
+      };
+
+      graph.addNode(fromUnitId.toString(), nodePaths);
+    };
+
+    return graph;
   }
 
   private async buildGenericGraph()
