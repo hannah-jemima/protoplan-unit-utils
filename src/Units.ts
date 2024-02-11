@@ -180,31 +180,32 @@ export default class Units
 
     const graph = new Graph;
 
-    const units = this.genericUnits;
+    const unitIds = this.genericUnits.map(u => u.unitId)
+      .concat(productUnitConversions.map(uc => [uc.fromUnitId, uc.toUnitId]).flat());
+    const uniqueUnitIds = unitIds.filter((id, i) => i === unitIds.indexOf(id));
 
-    const fromUnitIds = units.map(u => u.unitId);
-    const productUcFromUnitIds = productUnitConversions.map(uc => uc.fromUnitId);
-    let uniqueFromUnitIds = fromUnitIds.concat(productUcFromUnitIds);
-    uniqueFromUnitIds = uniqueFromUnitIds.filter((id, i) => i === uniqueFromUnitIds.indexOf(id));
-
-    const toUnitIds = units.map(u => u.unitId);
-    const productUcToUnitIds = productUnitConversions.map(uc => uc.toUnitId);
-    let uniqueToUnitIds = toUnitIds.concat(productUcToUnitIds);
-    uniqueToUnitIds = uniqueToUnitIds.filter((id, i) => i === uniqueToUnitIds.indexOf(id));
-
-    for(const fromUnitId of uniqueFromUnitIds)
+    for(const fromUnitId of uniqueUnitIds)
     {
       const nodePaths: PathList = {};
 
-      for(const toUnitId of uniqueToUnitIds)
+      for(const toUnitId of uniqueUnitIds)
       {
         if(fromUnitId === toUnitId)
           continue;
 
-        const ucFactor = productUnitConversions
-          .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
+        let factor =
+          productUnitConversions
+            .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
 
-        const factor = ucFactor || await this.getPreferredDirectFactor(fromUnitId, toUnitId);
+        if(!factor)
+        {
+          const inverseFactor = productUnitConversions
+            .find(uc => uc.fromUnitId === toUnitId && uc.toUnitId === fromUnitId)?.factor;
+          if(inverseFactor)
+            factor = 1 / inverseFactor;
+        }
+
+        factor = factor || await this.getPreferredDirectFactor(fromUnitId, toUnitId);
 
         if(factor)
           nodePaths[toUnitId] = factor;
