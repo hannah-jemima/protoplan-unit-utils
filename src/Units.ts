@@ -6,11 +6,6 @@ interface PathList
   [node: number]: number | undefined;
 }
 
-interface ProductNodes
-{
-  [productId: number]: { unitId: number, paths: PathList }[] | undefined;
-}
-
 type SelectUnits = (filters?: { productId?: number, unitId?: number }) => Promise<IUnit[]>;
 type SelectDirectConversions = (productId?: number) => Promise<IUnitConversion[]>;
 
@@ -162,6 +157,9 @@ export default class Units
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
 
+    if(productIds && productIds[0] === 24515)
+      console.log("path", path);
+
     if(path.length < 2)
       return;
 
@@ -211,6 +209,9 @@ export default class Units
 
       graph.addNode(fromUnitId.toString(), nodePaths);
     };
+
+    if(productIds[0] === 24515)
+      console.log("graph", graph);
 
     return graph;
   }
