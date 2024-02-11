@@ -157,7 +157,7 @@ export default class Units
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
 
-    if(productIds && productIds[0] === 24515)
+    if(productIds && productIds[0] === 24515 && fromUnitId === 9 && toUnitId === 10)
       console.log("path", path);
 
     if(path.length < 2)
@@ -198,6 +198,9 @@ export default class Units
 
       for(const toUnitId of uniqueToUnitIds)
       {
+        if(fromUnitId === toUnitId)
+          continue;
+
         const ucFactor = productUnitConversions
           .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
 
@@ -209,9 +212,6 @@ export default class Units
 
       graph.addNode(fromUnitId.toString(), nodePaths);
     };
-
-    if(productIds[0] === 24515)
-      console.log("graph", graph);
 
     return graph;
   }
@@ -230,6 +230,9 @@ export default class Units
 
       for(const toUnit of units)
       {
+        if(fromUnit.unitId === toUnit.unitId)
+          continue;
+
         const factor = await this.getPreferredDirectFactor(fromUnit.unitId, toUnit.unitId);
 
         if(factor)
