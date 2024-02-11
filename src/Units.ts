@@ -157,9 +157,6 @@ export default class Units
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
 
-    if(productIds && productIds[0] === 24515 && fromUnitId === 9 && toUnitId === 10)
-      console.log("path", path);
-
     if(path.length < 2)
       return;
 
