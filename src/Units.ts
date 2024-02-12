@@ -103,7 +103,7 @@ export default class Units
 
     // Remove generic versions of product-specific units
     const productUnitNames = productUnits.map(u => u.name);
-    possibleUnitIds.filter(id =>
+    possibleUnitIds = possibleUnitIds.filter(id =>
     {
       const genericUnit = this.genericUnits.find(u => u.unitId === id);
       return !(genericUnit && productUnitNames.includes(genericUnit.name));
