@@ -101,6 +101,14 @@ export default class Units
     // Remove duplicates
     possibleUnitIds = possibleUnitIds.filter((id, i) => possibleUnitIds.indexOf(id) === i);
 
+    // Remove generic versions of product-specific units
+    const productUnitNames = productUnits.map(u => u.name);
+    possibleUnitIds.filter(id =>
+    {
+      const genericUnit = this.genericUnits.find(u => u.unitId === id);
+      return !(genericUnit && productUnitNames.includes(genericUnit.name));
+    });
+
     let validUnitOptions: IOption[] = [];
     for(const unitId of possibleUnitIds)
     {
