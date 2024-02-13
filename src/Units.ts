@@ -202,17 +202,19 @@ export default class Units
       .map(async id => await this.selectDirectConversions(id)))).flat().reverse();
 
     const fromUnitIds = productUnitConversions.map(uc => uc.fromUnitId);
+    const uniqueFromUnitIds = fromUnitIds.filter((id, i) => i === fromUnitIds.indexOf(id));
     const toUnitIds = productUnitConversions.map(uc => uc.toUnitId);
+    const uniqueToUnitIds = toUnitIds.filter((id, i) => i === toUnitIds.indexOf(id));
 
     if(productIds.length === 1 && productIds[0] === 20)
       console.log("productUnitConversions", productUnitConversions, fromUnitIds, toUnitIds);
 
     await this.getGenericGraph();
-    const productNodes = this.genericNodes;
+    const productNodes: Nodes = JSON.parse(JSON.stringify(this.genericNodes));
 
-    for(const fromUnitId of fromUnitIds)
+    for(const fromUnitId of uniqueFromUnitIds)
     {
-      for(const toUnitId of toUnitIds)
+      for(const toUnitId of uniqueToUnitIds)
       {
         if(fromUnitId === toUnitId)
           continue;
@@ -246,7 +248,7 @@ export default class Units
       this.productsNodes[productIds[0]] = productNodes;
 
     if(productIds.length === 1 && productIds[0] === 20)
-      console.log("productNodes", productNodes);
+      console.log("productNodes", productNodes, "genericNodes", this.genericNodes);
 
     return new Graph(productNodes);
   }
