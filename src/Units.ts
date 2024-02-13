@@ -3,7 +3,17 @@ import Graph from 'node-dijkstra';
 
 interface PathList
 {
-  [node: number]: number | undefined;
+  [node: string]: number;
+}
+
+interface Nodes
+{
+  [node: string]: PathList;
+}
+
+interface ProductNodes
+{
+  [productId: number]: Nodes;
 }
 
 type SelectUnits = (filters?: { productId?: number, unitId?: number }) => Promise<IUnit[]>;
@@ -11,12 +21,13 @@ type SelectDirectConversions = (productId?: number) => Promise<IUnitConversion[]
 
 export default class Units
 {
+  private selectUnits: SelectUnits = () => Promise.resolve([]);
+  private selectDirectConversions: SelectDirectConversions = () => Promise.resolve([]);
   private genericUnits: IUnit[] = [];
   private genericDirectConversions: IUnitConversion[] = [];   // Max 50
   private genericGraph: Graph | undefined = undefined;
-  private selectUnits: SelectUnits = () => Promise.resolve([]);
-  private selectDirectConversions: SelectDirectConversions = () => Promise.resolve([]);
-
+  private genericNodes: Nodes = {};
+  private productsNodes: ProductNodes = {};
 
   constructor(
     selectUnits: SelectUnits,
@@ -162,7 +173,7 @@ export default class Units
     if(fromUnitId === toUnitId)
       return [];
 
-    const graph = productIds?.length ? await this.buildProductGraph(productIds) : await this.getGenericGraph();
+    const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
 
     const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
@@ -178,31 +189,33 @@ export default class Units
     return this.genericGraph || await this.buildGenericGraph();
   }
 
+  private async getProductGraph(productIds: number[])
+  {
+    const productNodes = (productIds.length === 1) ? this.productsNodes[productIds[0]] : undefined;
+
+    return productNodes ? new Graph(productNodes) : await this.buildProductGraph(productIds);
+  }
+
   private async buildProductGraph(productIds: number[])
   {
-    await this.retrieveGenericUnitsAndConversions();
-
     const productUnitConversions = (await Promise.all(productIds
       .map(async id => await this.selectDirectConversions(id)))).flat();
 
-    const graph = new Graph;
+    const fromUnitIds = productUnitConversions.map(uc => uc.fromUnitId);
+    const toUnitIds = productUnitConversions.map(uc => uc.toUnitId);
 
-    const unitIds = this.genericUnits.map(u => u.unitId)
-      .concat(productUnitConversions.map(uc => [uc.fromUnitId, uc.toUnitId]).flat());
-    const uniqueUnitIds = unitIds.filter((id, i) => i === unitIds.indexOf(id));
+    await this.getGenericGraph();
+    const productNodes = this.genericNodes;
 
-    for(const fromUnitId of uniqueUnitIds)
+    for(const fromUnitId of fromUnitIds)
     {
-      const nodePaths: PathList = {};
-
-      for(const toUnitId of uniqueUnitIds)
+      for(const toUnitId of toUnitIds)
       {
         if(fromUnitId === toUnitId)
           continue;
 
-        let factor =
-          productUnitConversions
-            .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
+        let factor = productUnitConversions
+          .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
 
         if(!factor)
         {
@@ -212,24 +225,33 @@ export default class Units
             factor = 1 / inverseFactor;
         }
 
+        // Use generic direct conversions as fallback
         factor = factor || await this.getPreferredDirectFactor(fromUnitId, toUnitId);
 
-        if(factor)
-          nodePaths[toUnitId] = factor;
-      };
+        if(!factor)
+          continue;
 
-      graph.addNode(fromUnitId.toString(), nodePaths);
+        // Add nodes if none exist
+        if(!productNodes[fromUnitId])
+          productNodes[fromUnitId] = {};
+        if(!productNodes[toUnitId])
+          productNodes[toUnitId] = {};
+
+        // Add or replace factors
+        productNodes[fromUnitId][toUnitId] = factor;
+        productNodes[toUnitId][fromUnitId] = 1 / factor;
+      }
     };
 
-    return graph;
+    if(productIds.length === 1)
+      this.productsNodes[productIds[0]] = productNodes;
+
+    return new Graph(productNodes);
   }
 
   private async buildGenericGraph()
   {
     await this.retrieveGenericUnitsAndConversions();
-
-    const graph = new Graph;
-
     const units = this.genericUnits;
 
     for(const fromUnit of units)
@@ -247,10 +269,10 @@ export default class Units
           nodePaths[toUnit.unitId] = factor;
       };
 
-      graph.addNode(fromUnit.unitId.toString(), nodePaths);
+      this.genericNodes[fromUnit.unitId] = nodePaths;
     };
 
-    return graph;
+    return new Graph(this.genericNodes);
   }
 
   private async retrieveGenericUnitsAndConversions()
