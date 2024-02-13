@@ -133,6 +133,8 @@ export default class Units
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
     if(!path)
       return;
+    if(productIds && productIds[0] === 20 && (fromUnitId === 13 || fromUnitId === 33))
+      console.log("path", path);
 
     let factor = 1;
 
