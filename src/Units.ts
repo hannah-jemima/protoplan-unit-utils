@@ -175,7 +175,7 @@ export default class Units
 
     const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
 
-    const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
+    const path = ((graph.path(fromUnitId, toUnitId) || []) as string[])
       .map(id => Number(id));
 
     if(path.length < 2)
@@ -199,10 +199,13 @@ export default class Units
   private async buildProductGraph(productIds: number[])
   {
     const productUnitConversions = (await Promise.all(productIds
-      .map(async id => await this.selectDirectConversions(id)))).flat();
+      .map(async id => await this.selectDirectConversions(id)))).flat().reverse();
 
     const fromUnitIds = productUnitConversions.map(uc => uc.fromUnitId);
     const toUnitIds = productUnitConversions.map(uc => uc.toUnitId);
+
+    if(productIds.length === 1 && productIds[0] === 20)
+      console.log("productUnitConversions", productUnitConversions, fromUnitIds, toUnitIds);
 
     await this.getGenericGraph();
     const productNodes = this.genericNodes;
@@ -214,15 +217,11 @@ export default class Units
         if(fromUnitId === toUnitId)
           continue;
 
-        let factor = productUnitConversions
-          .find(uc => uc.fromUnitId === fromUnitId && uc.toUnitId === toUnitId)?.factor;
+        let factor;
 
-        if(!factor)
+        for(const uc of productUnitConversions)
         {
-          const inverseFactor = productUnitConversions
-            .find(uc => uc.fromUnitId === toUnitId && uc.toUnitId === fromUnitId)?.factor;
-          if(inverseFactor)
-            factor = 1 / inverseFactor;
+          factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
         }
 
         // Use generic direct conversions as fallback
@@ -245,6 +244,9 @@ export default class Units
 
     if(productIds.length === 1)
       this.productsNodes[productIds[0]] = productNodes;
+
+    if(productIds.length === 1 && productIds[0] === 20)
+      console.log("productNodes", productNodes);
 
     return new Graph(productNodes);
   }
