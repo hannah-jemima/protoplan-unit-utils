@@ -143,7 +143,11 @@ export default class Units
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
     if(!path)
+    {
+      if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
+        console.log("no path", fromUnitId, toUnitId);
       return;
+    }
 
     let factor = 1;
 
@@ -162,6 +166,9 @@ export default class Units
 
       factor = factor * (directFactor || 1);
     }
+
+    if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
+      console.log("factor", fromUnitId, toUnitId, factor);
 
     return factor;
   }
@@ -214,16 +221,11 @@ export default class Units
         if(fromUnitId === toUnitId)
           continue;
 
-        if(productIds[0] === 20)
-          console.log("fromUnitId toUnitId", fromUnitId, toUnitId);
-
         let factor;
 
         for(const uc of productUnitConversions)
         {
           factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
-          if(productIds[0] === 20)
-            console.log("uc factor", uc, factor);
           if(factor)
             break;
         }
@@ -243,17 +245,8 @@ export default class Units
         // Add or replace factors
         productNodes[fromUnitId][toUnitId] = factor;
         productNodes[toUnitId][fromUnitId] = 1 / factor;
-
-        if(productIds[0] === 20)
-          console.log("factor", productNodes[fromUnitId][toUnitId], productNodes[toUnitId][fromUnitId]);
       }
-
-      if(productIds[0] === 20)
-        console.log("productNodes", productNodes);
     };
-
-    if(productIds.length === 1)
-      this.productsNodes[productIds[0]] = productNodes;
 
     return new Graph(productNodes);
   }
