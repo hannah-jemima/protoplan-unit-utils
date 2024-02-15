@@ -190,6 +190,8 @@ export default class Units
       return [];
 
     const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
+    if(productIds && productIds[0] === 20)
+      console.log("getPath graph", graph);
 
     const path = ((graph.path(fromUnitId, toUnitId) || []) as string[])
       .map(id => Number(id));
@@ -208,12 +210,17 @@ export default class Units
   private async getProductGraph(productIds: number[])
   {
     const productNodes = (productIds.length === 1) ? this.productsNodes[productIds[0]] : undefined;
+    if(productIds[0] === 20)
+      console.log("this.productNodes", this.productsNodes[productIds[0]], productNodes);
 
     return productNodes ? new Graph(productNodes) : await this.buildProductGraph(productIds);
   }
 
   private async buildProductGraph(productIds: number[])
   {
+    if(productIds && productIds[0] === 20)
+      console.log("buildProductGraph");
+
     const productUnitConversions = (await Promise.all(productIds
       .map(async id => await this.selectDirectConversions(id)))).flat().reverse();
 
