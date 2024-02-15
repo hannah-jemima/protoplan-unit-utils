@@ -90,35 +90,24 @@ export default class Units
     let possibleUnitIds = [amountUnitId];
     if(recDoseUnitId)
       possibleUnitIds.push(recDoseUnitId);
-    if(product.productId === 20)
-      console.log("recDoseUnitId", possibleUnitIds);
 
     // Generic units with same form
     if(formId)
       possibleUnitIds.push(...this.genericUnits.filter(u => u.formId === formId).map(u => u.unitId));
 
-    if(product.productId === 20)
-      console.log("formId", formId, possibleUnitIds);
-
     // Product-specific units
     const productUnits = await this.selectUnits({ productId });
     possibleUnitIds.push(...productUnits.map(u => u.unitId));
-    if(product.productId === 20)
-      console.log("productUnits", possibleUnitIds);
 
     // Appearing in product-specific unit conversions
     const ucUnitIds = (await this.selectDirectConversions(productId))
       .map(uc => [uc.fromUnitId, uc.toUnitId]).flat();
     possibleUnitIds.push(...ucUnitIds);
-    if(product.productId === 20)
-      console.log("ucUnitIds", ucUnitIds, possibleUnitIds);
 
     // Add common small measure volumes if any already exist
     const smalVolumeUnitIds = [2, 13, 30, 31, 33];
     if(!smalVolumeUnitIds.every(value => !possibleUnitIds.includes(value)))
       possibleUnitIds.push(...smalVolumeUnitIds);
-    if(product.productId === 20)
-      console.log("smalVolumeUnitIds", possibleUnitIds);
 
     // Remove duplicates
     possibleUnitIds = possibleUnitIds.filter((id, i) => possibleUnitIds.indexOf(id) === i);
@@ -130,16 +119,12 @@ export default class Units
       const genericUnit = this.genericUnits.find(u => u.unitId === id);
       return !(genericUnit && productUnitNames.includes(genericUnit.name));
     });
-    if(product.productId === 20)
-      console.log("Remove generic versions", possibleUnitIds);
 
     let validUnitOptions: IOption[] = [];
     for(const unitId of possibleUnitIds)
     {
       // Check convertible with amountUnitId;
       const factor = await this.getFactor(unitId, amountUnitId, [productId]);
-      if(product.productId === 20)
-        console.log("unitId", unitId, "factor", factor);
       if(!factor)
         continue;
 
@@ -147,9 +132,6 @@ export default class Units
       if(option)
         validUnitOptions.push(option);
     };
-
-    if(product.productId === 20)
-      console.log("validUnitOptions", validUnitOptions);
 
     return validUnitOptions.sort((a, b) => a.label.localeCompare(b.label));
   }
@@ -210,17 +192,12 @@ export default class Units
   private async getProductGraph(productIds: number[])
   {
     const productNodes = (productIds.length === 1) ? this.productsNodes[productIds[0]] : undefined;
-    if(productIds[0] === 20)
-      console.log("this.productNodes", this.productsNodes[productIds[0]], productNodes);
 
     return productNodes ? new Graph(productNodes) : await this.buildProductGraph(productIds);
   }
 
   private async buildProductGraph(productIds: number[])
   {
-    if(productIds && productIds[0] === 20)
-      console.log("buildProductGraph");
-
     const productUnitConversions = (await Promise.all(productIds
       .map(async id => await this.selectDirectConversions(id)))).flat().reverse();
 
@@ -238,6 +215,9 @@ export default class Units
       {
         if(fromUnitId === toUnitId)
           continue;
+
+        if(productIds[0] === 20)
+          console.log("fromUnitId toUnitId", fromUnitId, toUnitId);
 
         let factor;
 
@@ -261,7 +241,13 @@ export default class Units
         // Add or replace factors
         productNodes[fromUnitId][toUnitId] = factor;
         productNodes[toUnitId][fromUnitId] = 1 / factor;
+
+        if(productIds[0] === 20)
+          console.log("factor", productNodes[fromUnitId][toUnitId], productNodes[toUnitId][fromUnitId]);
       }
+
+      if(productIds[0] === 20)
+        console.log("productNodes", productNodes);
     };
 
     if(productIds.length === 1)
