@@ -163,9 +163,6 @@ export default class Units
       factor = factor * (directFactor || 1);
     }
 
-    if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
-      console.log("factor", fromUnitId, toUnitId, factor);
-
     return factor;
   }
 
@@ -176,14 +173,8 @@ export default class Units
 
     const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
 
-    const path = ((graph.path(fromUnitId, toUnitId) || []) as string[])
+    const path = ((graph.path(fromUnitId.toString(), toUnitId.toString()) || []) as string[])
       .map(id => Number(id));
-
-    if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
-      console.log("path",
-        graph.path(fromUnitId, toUnitId),
-        graph.path(fromUnitId.toString(), toUnitId),
-        graph.path(fromUnitId.toString(), toUnitId.toString()));
 
     if(path.length < 2)
       return;
