@@ -172,8 +172,6 @@ export default class Units
       return [];
 
     const graph = productIds?.length ? await this.getProductGraph(productIds) : await this.getGenericGraph();
-    if(productIds && productIds[0] === 20)
-      console.log("getPath graph", graph);
 
     const path = ((graph.path(fromUnitId, toUnitId) || []) as string[])
       .map(id => Number(id));
