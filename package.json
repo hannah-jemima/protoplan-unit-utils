@@ -1,6 +1,6 @@
 {
   "name": "@protoplan/unit-utils",
-  "version": "9.0.35",
+  "version": "9.0.36",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",

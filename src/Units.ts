@@ -143,11 +143,7 @@ export default class Units
 
     const path = await this.getPath(fromUnitId, toUnitId, productIds);
     if(!path)
-    {
-      if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
-        console.log("no path", fromUnitId, toUnitId);
       return;
-    }
 
     let factor = 1;
 
@@ -182,6 +178,12 @@ export default class Units
 
     const path = ((graph.path(fromUnitId, toUnitId) || []) as string[])
       .map(id => Number(id));
+
+    if(productIds && productIds[0] === 20 && (fromUnitId === 89 || toUnitId=== 89))
+      console.log("path",
+        graph.path(fromUnitId, toUnitId),
+        graph.path(fromUnitId.toString(), toUnitId),
+        graph.path(fromUnitId.toString(), toUnitId.toString()));
 
     if(path.length < 2)
       return;
