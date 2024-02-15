@@ -224,6 +224,8 @@ export default class Units
           factor = factorIfConversionMatches(uc, fromUnitId, toUnitId);
           if(productIds[0] === 20)
             console.log("uc factor", uc, factor);
+          if(factor)
+            break;
         }
 
         // Use generic direct conversions as fallback
