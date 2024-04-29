@@ -166,7 +166,7 @@ export default class Units
     return factor;
   }
 
-  private async getPath(fromUnitId: number, toUnitId: number, productIds?: number[])
+  public async getPath(fromUnitId: number, toUnitId: number, productIds?: number[])
   {
     if(fromUnitId === toUnitId)
       return [];
@@ -235,11 +235,19 @@ export default class Units
         if(!productNodes[toUnitId])
           productNodes[toUnitId] = {};
 
+        // Make mg active ingredient paths shortest for inter-product conversions (nodes & factors not saved)
+        if(productIds.length > 1 && (fromUnitId === 12 || toUnitId === 12))
+          factor = 1e-10;
+
         // Add or replace factors
         productNodes[fromUnitId][toUnitId] = factor;
-        productNodes[toUnitId][fromUnitId] = 1 / factor;
+        productNodes[toUnitId][fromUnitId] = (factor > 1e-10) ? 1 / factor : factor;
       }
     };
+
+    // Save graph for individual product
+    if(productIds.length === 1)
+      this.productsNodes[productIds[0]] = productNodes;
 
     return new Graph(productNodes);
   }
